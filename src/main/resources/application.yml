@@ -1,0 +1,42 @@
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  max-http-request-header-size: 16KB
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never
+    include-exception: false
+  tomcat:
+    max-swallow-size: 256KB
+    max-http-form-post-size: 256KB
+
+spring:
+  application:
+    name: local-ai-workbench
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+  mvc:
+    async:
+      request-timeout: 180000
+  jackson:
+    default-property-inclusion: non_null
+
+argus:
+  chat:
+    model-path: ${ARGUS_CHAT_MODEL_PATH:}
+    chat-formatter: ${ARGUS_CHAT_FORMATTER:auto}
+    chat-mode: ${ARGUS_CHAT_MODE:both}
+    context-length: ${ARGUS_CONTEXT_LENGTH:4096}
+    max-output-tokens: ${ARGUS_MAX_OUTPUT_TOKENS:512}
+    gpu-layers: ${ARGUS_GPU_LAYERS:0}
+    cpu-threads: ${ARGUS_CPU_THREADS:0}
+    temperature: ${ARGUS_TEMPERATURE:0.7}
+    max-concurrent-inference: ${ARGUS_MAX_CONCURRENT_INFERENCE:1}
+    max-prompt-chars: ${ARGUS_MAX_PROMPT_CHARS:12000}
+    max-history-messages: ${ARGUS_MAX_HISTORY_MESSAGES:20}
+    max-request-body-bytes: ${ARGUS_MAX_REQUEST_BODY_BYTES:65536}
+    inference-timeout-seconds: ${ARGUS_INFERENCE_TIMEOUT_SECONDS:180}
+    fail-fast-startup: ${ARGUS_FAIL_FAST_STARTUP:true}
+    system-prompt: ${ARGUS_SYSTEM_PROMPT:You are a helpful, accurate, and concise AI assistant running locally in-process via libargus.}

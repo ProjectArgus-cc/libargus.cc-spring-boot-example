@@ -1,0 +1,2 @@
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+  cc.projectargus.workbench.config.ArgusStartupFailureAnalyzer

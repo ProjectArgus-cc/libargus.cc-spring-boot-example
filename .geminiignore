@@ -1,0 +1,16 @@
+target/
+.mvn/wrapper/*.jar
+*.gguf
+*.bin
+*.log
+*.so
+*.dylib
+*.dll
+src/main/resources/static/assets/*.png
+docs/assets/*.png
+docs/assets/*.gif
+\${project.build.directory}/
+.idea/
+*.iml
+.vscode/
+.DS_Store

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local AI Workbench — Project Argus &amp; Spring Boot</title>
+    <link rel="icon" type="image/png" href="/assets/argus-logo.png">
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+    <div class="workbench-shell argus-shadow">
+        <header class="topbar argus-glass" role="banner">
+            <div class="brand-group">
+                <img
+                    src="/assets/argus-logo.png"
+                    alt="Project Argus Emblem"
+                    class="brand-logo"
+                    width="42"
+                    height="42"
+                >
+                <div>
+                    <div class="brand-title-row">
+                        <h1 class="brand-title">LOCAL AI WORKBENCH</h1>
+                        <span class="execution-pill">LIBARGUS IN-PROCESS RUNTIME</span>
+                    </div>
+                    <p class="brand-subtitle">
+                        Zero-sidecar local GGUF inference via <code>libargus-langchain4j</code> &amp; Spring Boot
+                    </p>
+                </div>
+            </div>
+
+            <div class="topbar-controls">
+                <div id="status-badge" class="status-badge status-loading" role="status" aria-live="polite">
+                    <span class="status-dot"></span>
+                    <span id="status-text">CHECKING RUNTIME…</span>
+                </div>
+                <button id="refresh-status-btn" type="button" class="btn btn-ghost argus-hover" title="Refresh runtime status">
+                    REFRESH STATUS
+                </button>
+                <button id="new-chat-btn" type="button" class="btn btn-secondary argus-hover">
+                    NEW CHAT
+                </button>
+            </div>
+        </header>
+
+        <section id="runtime-telemetry-bar" class="telemetry-bar" aria-label="Runtime configuration telemetry">
+            <div class="telemetry-item">
+                <span class="telemetry-label">BINDING</span>
+                <span id="meta-binding" class="telemetry-value telemetry-cyan">—</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="telemetry-label">MODEL</span>
+                <span id="meta-model" class="telemetry-value telemetry-purple">—</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="telemetry-label">TEMPLATE</span>
+                <span id="meta-formatter" class="telemetry-value telemetry-blue">—</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="telemetry-label">CONTEXT / MAX OUT</span>
+                <span id="meta-context" class="telemetry-value telemetry-tokens">—</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="telemetry-label">BACKENDS</span>
+                <span id="meta-backends" class="telemetry-value telemetry-emerald">—</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="telemetry-label">MESSAGES</span>
+                <span id="meta-turns" class="telemetry-value">0</span>
+            </div>
+        </section>
+
+        <div id="alert-banner" class="alert-banner hidden" role="alert" aria-live="assertive">
+            <div class="alert-content">
+                <strong id="alert-code" class="alert-code">error</strong>
+                <span id="alert-message" class="alert-message"></span>
+            </div>
+            <button id="alert-dismiss-btn" type="button" class="btn-icon" aria-label="Dismiss error">×</button>
+        </div>
+
+        <main id="transcript-container" class="transcript-container" role="log" aria-live="polite">
+            <div id="empty-state" class="empty-state argus-glass">
+                <div class="hero-banner-wrapper">
+                    <img
+                        src="/assets/argus-banner.png"
+                        alt="Project Argus — Local AI Workbench"
+                        class="hero-banner-img"
+                    >
+                </div>
+                <div class="empty-state-body">
+                    <h2>READY FOR LOCAL IN-PROCESS INFERENCE</h2>
+                    <p>
+                        Prompts execute directly inside the JVM process through native <code>libargus</code> bindings.
+                        Conversation context is held strictly in volatile browser memory—clearing the transcript resets
+                        the conversation immediately.
+                    </p>
+                    <div class="starter-prompts" aria-label="Example prompts">
+                        <button type="button" class="starter-chip argus-hover" data-prompt="Why does in-process FFI/JNI inference avoid the latency and serialization overhead of loopback HTTP sidecars?">
+                            In-process FFI vs. loopback sidecars
+                        </button>
+                        <button type="button" class="starter-chip argus-hover" data-prompt="Give me a concise 4-point checklist for deterministic native resource ownership and shutdown in a Spring Boot service.">
+                            Deterministic native lifecycle checklist
+                        </button>
+                        <button type="button" class="starter-chip argus-hover" data-prompt="Write a short haiku about CPU cache lines and KV cache locality.">
+                            Haiku on CPU cache lines
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="messages-list" class="messages-list"></div>
+        </main>
+
+        <footer class="composer-panel argus-glass">
+            <form id="chat-form" class="composer-form" novalidate>
+                <div class="argus-tab-bar" role="tablist" aria-label="Inference Execution Mode">
+                    <div class="argus-tab-row">
+                        <button
+                            id="tab-stream"
+                            type="button"
+                            role="tab"
+                            aria-selected="true"
+                            class="argus-tab selected"
+                            data-mode="stream"
+                        >
+                            <span class="argus-tab-label">STREAMING (SSE)</span>
+                            <span class="argus-tab-indicator"></span>
+                        </button>
+                        <button
+                            id="tab-sync"
+                            type="button"
+                            role="tab"
+                            aria-selected="false"
+                            class="argus-tab"
+                            data-mode="sync"
+                        >
+                            <span class="argus-tab-label">SYNCHRONOUS (JSON)</span>
+                            <span class="argus-tab-indicator"></span>
+                        </button>
+                    </div>
+                    <div class="argus-tab-divider"></div>
+                </div>
+
+                <div class="composer-options">
+                    <label class="option-field sr-only" for="mode-select">
+                        <span>MODE</span>
+                        <select id="mode-select">
+                            <option value="stream" selected>Streaming (SSE)</option>
+                            <option value="sync">Synchronous (JSON)</option>
+                        </select>
+                    </label>
+                    <label class="option-field" for="temperature-input">
+                        <span>TEMPERATURE</span>
+                        <input id="temperature-input" type="number" min="0" max="2" step="0.1" value="0.7">
+                    </label>
+                    <label class="option-field" for="max-tokens-input">
+                        <span>MAX OUTPUT TOKENS</span>
+                        <input id="max-tokens-input" type="number" min="1" max="4096" step="16" value="512">
+                    </label>
+                    <span id="char-counter" class="char-counter">0 / 12,000 CHARS</span>
+                </div>
+
+                <div class="composer-input-row">
+                    <textarea
+                        id="prompt-input"
+                        class="prompt-textarea"
+                        rows="3"
+                        placeholder="Ask a question… (Press Enter to send, Shift+Enter for a newline)"
+                        aria-label="Prompt input"
+                        required
+                    ></textarea>
+                    <div class="composer-actions">
+                        <button id="send-btn" type="submit" class="btn btn-primary argus-hover">
+                            SEND
+                        </button>
+                        <button id="stop-btn" type="button" class="btn btn-danger argus-hover hidden">
+                            STOP
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </footer>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

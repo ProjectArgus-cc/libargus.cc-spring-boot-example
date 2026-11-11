@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-and-test:
+    name: Maven Build & Tests (Java ${{ matrix.java }} — ${{ matrix.label }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - java: "17"
+            label: "JNI Baseline"
+          - java: "21"
+            label: "JNI Baseline"
+          - java: "22"
+            label: "Panama FFM Auto-Shift"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Run unit, Spring MVC & frontend JS regression tests
+        run: ./mvnw -B -ntp clean test
+
+      - name: Verify executable JAR packaging without model files
+        run: ./mvnw -B -ntp package -DskipTests
+
+      - name: Verify explicit -Pjni portable override on JDK 22+
+        if: matrix.java == '22'
+        run: ./mvnw -B -ntp test package -Pjni
